@@ -1,0 +1,23 @@
+Parsing Optimization
+
+Three optimization techniques that we used to tune our running performance were Auto-commit, Batch Inserts, and Load Data Infile.
+
+Before using any of the optimization techniques, our program was running at
+147565 ms
+which is roughly around 2.45941667 minutes.
+
+After implementing the auto-commit with the Batch Inserts, our running time lowered to
+70988 ms
+which is around 1.1831333333 minutes.
+
+Performance improved significantly.
+
+Auto-commit played a huge part in the decrease of our performance time. When we are making changes to the database, none of the changes will appear in the database until the commit command is called. Timing when to run the commit command is really important because it is a heavy operation and so should be done in batches, not after every update.
+
+Batch Inserts also improved our performance dramatically because without it, we would be executing each insert separately and hitting the database for each of the insert statements. With batch inserts, we are accumulating the insert statements and then executing them all at once in one go. This way we are hitting the database just once (turning run-time performance to constant run-time).
+
+After implementing Load Data Infile, our running time decreased to
+60997 ms
+which is around 1.0166166667 minutes.
+
+Load Data Infile is a statement that reads rows from a text file into a table at a very high speed. Load Data Infile is highly preferred over insert statements because parsing and executing individual insert statements carries a much larger overhead than splitting a CSV file into columns and directly loading them.

@@ -1,0 +1,36 @@
+Connection Pooling in the Scaled System
+
+The operation of scaling FabFlix requires a load balancer to evenly distribute the request from user to two-backend instances. The two MySql databases in the two instances has master-slave relationship between them, in which the write operation in the Master Mysql will propagate and repeat in the Slave
+Mysql through a log file. The Slave will not propagate the writing operation to the master. Basically, a write operation in slave Mysql will break the synchronization between two mysql databases, and a write in master is safe. In this scenario, the request send to the slave instance will potentially lead to asynchronization between two backend system.
+To solve this problem, another Connection Pooling  resource is specified in context.xml and web.xml:
+ 
+Context.xml
+<Resource name="jdbc/Master" auth="Container" type="javax.sql.DataSource"
+        maxTotal="100" maxIdle="30" maxWaitMillis="10000" username="mytestuser"
+        password="mypassword" driverClassName="com.mysql.jdbc.Driver"
+        url="jdbc:mysql://54.153.115.152:3306/moviedb?autoReconnect=true&amp;useSSL=false" />
+
+web.xml
+     <resource-ref>
+     <description>MASTERDB Connection</description>
+     <res-ref-name>jdbc/Master</res-ref-name>
+     <res-type>javax.sql.DataSource</res-type>
+     <res-auth>Container</res-auth>
+    </resource-ref>
+
+This extra connection pooling resource provide a direct connection for both instances to connect to the master mysql database. When there is a writing operation in slave’s servlet, the servlet will directly connect with Master’s mysql and perform the writing.
+
+If there is only one session created and all the reading requests are sent to the instances who creates the session, then this instance and its Database has to bear all the load from user(assume all the requests are read operation). To balance the load of read operation, the servlet will randomly choose which Mysql to connect to. To implement this feature, when the servlet extract the connection from pools,
+it will generate a random boolean variable and determine which pooling resource(master/slave) to use. In this case, either Mysql instance will have ~50% possibility to receive the read queries.
+
+A extra pooling resource ‘jdbc/EmpDB’ is added to dedicate on employee authorization:
+
+Context.xml:
+<Resource name="jdbc/EmpDB" auth="Container" type="javax.sql.DataSource" maxTotal="100" maxIdle="30" maxWaitMillis="10000" username="root" password="root" driverClassName="com.mysql.jdbc.Driver" url="jdbc:mysql://localhost:3306/moviedb?autoReconnect=true&useSSL=false"/>
+
+web.xml
+<resource-ref><description>none</description><res-ref-name>jdbc/EmpDB</res-ref-name><res-type>javax.sql.DataSource</res-type><res-auth>Container</res-auth></resource-ref>
+
+Only the root user in Mysql could perform the read query during employee authorization process.
+
+In a word, both instance2 and instance3 has the same version of scaled FabFlix deployed, each with three connection pooling resources. The servlet will choose which connection pooling to use based on type of request.

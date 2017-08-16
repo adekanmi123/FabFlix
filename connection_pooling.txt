@@ -1,0 +1,96 @@
+How/Where - Connection Pooling
+
+Original (Instance 1) IP: 35.184.60.142
+Master (Instance 2) IP: 54.153.115.152
+Slave (Instance 3) IP: 54.219.190.244
+
+1. \META-INF\context.xml
+- TestDB for customers. EmpDB for employees. Copy and paste in context.xml:
+
+<Context path="/TomcatTest">
+
+	<Resource name="jdbc/TestDB" auth="Container" type="javax.sql.DataSource"
+		maxTotal="100" maxIdle="30" maxWaitMillis="10000" username="mytestuser"
+		password="mypassword" driverClassName="com.mysql.jdbc.Driver"
+		url="jdbc:mysql://localhost:3306/moviedb?autoReconnect=true&amp;useSSL=false" />
+		
+	<Resource name="jdbc/EmpDB" auth="Container" type="javax.sql.DataSource"
+		maxTotal="100" maxIdle="30" maxWaitMillis="10000" username="root"
+		password="root" driverClassName="com.mysql.jdbc.Driver"
+		url="jdbc:mysql://localhost:3306/moviedb?autoReconnect=true&amp;useSSL=false" />
+
+</Context>
+
+2. *.java
+- In all .java files that connect to the database, comment out the creation of a new connection and add in connection pooling code. IMPORTANT: For "LoginEmployee.java", change "jdbc/TestDB" to "jdbc/EmpDB":
+
+			 PrintWriter out = response.getWriter();
+
+// the following commented lines are direct connections without pooling
+//			 String loginUser = "mytestuser";
+//			 String loginPasswd = "mypassword";
+//			 String loginUrl = "jdbc:mysql://localhost:3306/moviedb";
+//
+//			 Class.forName("com.mysql.jdbc.Driver").newInstance();
+//
+//			 dbcon = DriverManager.getConnection(loginUrl, loginUser,
+//			 loginPasswd);
+			
+			
+// the following lines are connection pooling
+			Context initCtx = new InitialContext();
+			if (initCtx == null)
+				out.println("initCtx is NULL");
+
+			Context envCtx = (Context) initCtx.lookup("java:comp/env");
+			if (envCtx == null)
+				out.println("envCtx is NULL");
+
+			// Look up our data source
+			DataSource ds = (DataSource) envCtx.lookup("jdbc/TestDB");
+
+			if (ds == null)
+				out.println("ds is null.");
+
+			dbcon = ds.getConnection();
+			if (dbcon == null)
+				out.println("dbcon is null.");
+
+3. \WEB-INF\web.xml
+- TestDB for customers. EmpDB for employees. Copy and paste this code before </web-app>:
+
+  	<resource-ref>
+		<description>
+			Resource reference to a factory for java.sql.Connection
+			instances that may be used for talking to a particular
+			database that
+			is configured in the server.xml file.
+		</description>
+		<res-ref-name>
+			jdbc/TestDB
+		</res-ref-name>
+		<res-type>
+			javax.sql.DataSource
+		</res-type>
+		<res-auth>
+			Container
+		</res-auth>
+	</resource-ref>
+	
+	  	<resource-ref>
+		<description>
+			Resource reference to a factory for java.sql.Connection
+			instances that may be used for talking to a particular
+			database that
+			is configured in the server.xml file.
+		</description>
+		<res-ref-name>
+			jdbc/EmpDB
+		</res-ref-name>
+		<res-type>
+			javax.sql.DataSource
+		</res-type>
+		<res-auth>
+			Container
+		</res-auth>
+	</resource-ref>

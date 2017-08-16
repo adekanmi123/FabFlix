@@ -1,0 +1,114 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    background-color: linen;
+}
+
+td {
+    border-top-style: solid;
+}
+</style>
+</head>
+<body>
+
+<table style="width:100%">
+  <tr style="font-weight:bold; background-color: orange">
+    <td width="300px">Single-instance version cases</td>
+    <td>Graph Results Screenshot</td>
+    <td>Average Query Time(ms)</td>
+    <td>Average Search Servlet Time(ms)</td>
+    <td>Average JDBC Time(ms)</td>
+    <td>Analysis</td>
+  </tr>
+  <tr>
+    <td>Case 1: HTTP/1 thread</td>
+    <td><img src="graph_results_case1.png" alt="Graph Results Screenshot Case 1" style="width:304px;height:228px;"></td>
+    <td>54.672</td>
+    <td>7.099</td>
+    <td>6.3</td>
+    <td>Instance is optimized with prepared statements and connection pooling. This is the best version.</td>
+  </tr>
+  <tr>
+    <td>Case 2: HTTP/10 threads</td>
+    <td><img src="graph_results_case2.png" alt="Graph Results Screenshot Case 2" style="width:304px;height:228px;"></td>
+    <td>92.593</td>
+    <td>15.642</td>
+    <td>7.902</td>
+    <td>Using 10 threads as opposed to 1 in case 1. All three averages are longer than case 1 because there are more searches happening at the same time.</td>
+  </tr>
+  <tr>
+    <td>Case 3: HTTPS/10 threads</td>
+    <td><img src="graph_results_case3.png" alt="Graph Results Screenshot Case 3" style="width:304px;height:228px;"></td>
+    <td>157.368</td>
+    <td>15.676</td>
+    <td>8.858</td>
+    <td>Using HTTPS is slower than HTTP because when making a request using HTTPS, a handshake is made to verify the authenticity of the request (extra step to be made when using HTTPS). This handshake incurs some overhead resulting in a somewhat high number for Average Query Time. TS and TJ times didn't change much compared to case 2 as to be expected.</td>
+  </tr>
+  <tr>
+    <td>Case 4: HTTP/10 threads/No prepared statements</td>
+    <td><img src="graph_results_case4.png" alt="Graph Results Screenshot Case 4" style="width:304px;height:228px;"></td>
+    <td>122.378</td>
+    <td>18.746</td>
+    <td>9.141</td>
+    <td>Instance uses no prepared statements. Average time spent for all three measurements are higher compared to case 2. This is to be expected since a new statement has to be created for every search and statements aren't pre-compiled like prepared statements are. This proves how important prepared statements are in helping optimize our system.</td>
+  </tr>
+  <tr>
+    <td>Case 5: HTTP/10 threads/No connection pooling</td>
+    <td><img src="graph_results_case5.png" alt="Graph Results Screenshot Case 5" style="width:304px;height:228px;"></td>
+    <td>82.949</td>
+    <td>14.143</td>
+    <td>10.631</td>
+    <td>Instance has no connection pooling. The time averages confirm our expectations of being slower. Since there is no connection pooling, the average spent doing a JDBC query is longer since a new connection has to be established for every search. This proves how important connection pooling is in helping optimize our system.</td>
+  </tr>
+
+</table> 
+
+
+<table style="width:100%">
+  <tr style="font-weight:bold; background-color: orange">
+    <td width="300px">Scaled version cases</td>
+    <td>Graph Results Screenshot</td>
+    <td>Average Query Time(ms)</td>
+    <td>Average Search Servlet Time(ms)</td>
+    <td>Average JDBC Time(ms)</td>
+    <td>Analysis</td>
+  </tr>
+  <tr>
+    <td>Case 1: HTTP/1 thread</td>
+    <td><img src="scaled_case1.png" alt="Graph Results Screenshot Case 1" style="width:304px;height:228px;"></td>
+    <td>79.761</td>
+    <td>31.287</td>
+    <td>35.732</td>
+    <td>No load balancing used here since it is only using 1 thread. The measurement times for all the cases in this scaled-version are higher here than the single-instance because...</td>
+  </tr>
+  <tr>
+    <td>Case 2: HTTP/10 threads</td>
+    <td><img src="scaled_case2.png" alt="Graph Results Screenshot Case 2" style="width:304px;height:228px;"></td>
+    <td>430.11</td>
+    <td>46.736</td>
+    <td>53.727</td>
+    <td>Load balancing used here because there are 10 threads. The query workload is distributed evenly between the master and slave instances (confirmed by checking log files and Tomcat sessions). However, the time is really high because...</td>
+  </tr>
+  <tr>
+    <td>Case 3: HTTP/10 threads/No prepared statements</td>
+    <td><img src="scaled_case4.png" alt="Graph Results Screenshot Case 4" style="width:304px;height:228px;"></td>
+    <td>444.015</td>
+    <td>40.604</td>
+    <td>52.926</td>
+    <td>No prepared statements used. Average query time is slower than case 2 as expected because statements aren't pre-compiled like prepared statements are...</td>
+  </tr>
+  <tr>
+    <td>Case 4: HTTP/10 threads/No connection pooling</td>
+    <td><img src="scaled_case4.png" alt="Graph Results Screenshot Case 4" style="width:304px;height:228px;"></td>
+    <td>147.929</td>
+    <td>58.665</td>
+    <td>90.823</td>
+    <td>No connection pooling used here. A new connection had to be made every time we access the database which explains the high TJ time(?)...</td>
+  </tr>
+
+</table> 
+
+</body>
+</html>
